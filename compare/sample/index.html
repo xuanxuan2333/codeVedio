@@ -1,0 +1,28 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html,body{margin:0;width:1280px;height:720px;overflow:hidden;background:#0b0d12;
+            font-family:"PingFang SC",system-ui,sans-serif}
+  #stage{position:relative;width:1280px;height:720px;display:grid;place-items:center}
+  #box{width:260px;height:170px;border-radius:20px;border:3px solid #58a6ff;
+       background:hsl(212 85% 22% / .35)}
+  #label{position:absolute;bottom:64px;width:100%;text-align:center;opacity:0;
+         font-family:"SF Mono",Menlo,monospace;font-size:34px;letter-spacing:1px;color:#e6edf3}
+</style></head><body>
+<div id="stage"><div id="box"></div><div id="label">translate → rotate → scale</div></div>
+<script>
+const B=document.getElementById('box'), L=document.getElementById('label');
+const seg=(t,a,b)=>{const p=Math.min(1,Math.max(0,(t-a)/(b-a)));
+  return p<.5?4*p*p*p:1-Math.pow(-2*p+2,3)/2;};
+window.seek=ms=>{
+  const t=ms/1000;
+  const m=seg(t,.2,1.7), r=seg(t,1.7,2.7), g=seg(t,2.7,3.7), p=seg(t,3.7,4.6);
+  const hue=212+p*60;
+  B.style.transform=`translateX(${-380+m*380}px) rotate(${r*45}deg) scale(${1+g*0.35})`;
+  B.style.borderColor=`hsl(${hue} 85% 62%)`;
+  B.style.background=`hsl(${hue} 85% 22% / .35)`;
+  B.style.boxShadow=`0 24px 60px -20px hsl(${hue} 85% 55% / ${.25+p*.45})`;
+  L.style.opacity=p;
+  L.style.transform=`translateY(${(1-p)*18}px)`;
+};
+window.__ready=true;
+</script></body></html>

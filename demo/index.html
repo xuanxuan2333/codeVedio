@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>CSS transform</title>
+<style>
+  :root{
+    --bg:#0b0d12; --fg:#e6edf3; --dim:#8b949e; --faint:#484f58;
+    --blue:#58a6ff; --purple:#bc8cff; --green:#3fb950; --orange:#ffa657; --line:#30363d;
+    --mono:"SF Mono",Menlo,monospace;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);}
+  body{font-family:var(--sans);color:var(--fg);-webkit-font-smoothing:antialiased}
+
+  #stage{position:relative;width:1920px;height:1080px;overflow:hidden;
+         background:radial-gradient(1200px 700px at 50% 20%, #131823 0%, #0b0d12 60%, #08090d 100%)}
+  #grid{position:absolute;inset:0;opacity:.35;
+        background-image:linear-gradient(#ffffff08 1px,transparent 1px),linear-gradient(90deg,#ffffff08 1px,transparent 1px);
+        background-size:60px 60px;
+        mask-image:radial-gradient(1000px 600px at 50% 40%,#000 20%,transparent 80%)}
+  #vignette{position:absolute;inset:0;pointer-events:none;
+        background:radial-gradient(900px 600px at 50% 45%,transparent 40%,#00000090 100%)}
+
+  .scene{position:absolute;inset:0;opacity:0}
+
+  .stitle{position:absolute;left:120px;top:88px;font-size:44px;font-weight:700;letter-spacing:.5px}
+  .stitle .num{color:var(--blue);font-family:var(--mono);margin-right:14px}
+  .skicker{position:absolute;left:122px;top:56px;font-size:20px;letter-spacing:6px;color:var(--faint);font-family:var(--mono)}
+
+  /* ---------- scene 1 ---------- */
+  #t-badge{position:absolute;left:120px;top:96px;font-family:var(--mono);font-size:22px;letter-spacing:3px;
+           color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:10px 22px}
+  #t-title{position:absolute;left:116px;top:340px;font-size:150px;font-weight:900;letter-spacing:-4px;line-height:1;
+           background:linear-gradient(92deg,#e6edf3 10%,var(--blue) 55%,var(--purple) 95%);
+           -webkit-background-clip:text;background-clip:text;color:transparent}
+  #t-sub{position:absolute;left:122px;top:540px;font-size:56px;color:#c9d1d9;font-weight:500}
+  #t-line{position:absolute;left:120px;top:640px;height:6px;width:0px;border-radius:3px;
+          background:linear-gradient(90deg,var(--blue),var(--purple))}
+  #t-meta{position:absolute;left:122px;top:700px;font-size:26px;color:var(--dim);font-family:var(--mono)}
+  #t-squares{position:absolute;right:150px;top:300px;width:520px;height:520px}
+  .sq{position:absolute;border-radius:18px;border:2px solid #ffffff22;background:#ffffff06}
+
+  /* ---------- scene 2 ---------- */
+  .slot{position:absolute;border:3px dashed #3f4754;border-radius:20px}
+  .slot .tag{position:absolute;left:0;top:-46px;font-size:22px;color:var(--dim);font-family:var(--mono);letter-spacing:1px}
+  #s2-box{position:absolute;left:260px;top:400px;width:420px;height:300px;border-radius:20px;
+          background:linear-gradient(140deg,#1f6feb33,#bc8cff22);border:3px solid var(--blue);
+          box-shadow:0 30px 80px -20px #1f6feb66, inset 0 1px 0 #ffffff22}
+  #s2-box .lbl{position:absolute;bottom:-44px;left:0;font-family:var(--mono);font-size:24px;color:var(--blue)}
+  #s2-box .inner{position:absolute;inset:0;display:grid;place-items:center;font-size:26px;color:#ffffff55;letter-spacing:2px}
+  #s2-dim{position:absolute;left:260px;top:772px;height:2px;background:var(--orange);width:0}
+  #s2-dim .cap{position:absolute;left:0;top:-40px;font-family:var(--mono);font-size:24px;color:var(--orange);white-space:nowrap}
+  #s2-arrow{position:absolute;left:0;top:0;opacity:0}
+  #s2-text{position:absolute;left:1180px;top:412px;width:580px;font-size:34px;line-height:1.85;color:#6e7681}
+  #s2-text b{color:var(--fg);font-weight:600}
+  #s2-chip{position:absolute;left:1240px;top:186px;font-family:var(--mono);font-size:26px;color:#c9d1d9;
+           background:#161b22;border:1px solid var(--line);border-radius:12px;padding:16px 24px;opacity:0}
+  #s2-chip span{color:var(--blue)}
+  #s2-badge{position:absolute;left:260px;top:836px;font-size:28px;color:var(--green);font-family:var(--mono);
+            border:1px solid #2ea04366;background:#2ea0431a;border-radius:999px;padding:12px 26px;opacity:0}
+
+  /* ---------- scene 3 ---------- */
+  #s3-ghost{position:absolute;left:610px;top:420px;width:420px;height:280px;border-radius:22px;border:2px dashed #3f4754;opacity:.75}
+  #s3-box{position:absolute;left:610px;top:420px;width:420px;height:280px;border-radius:22px;
+          background:linear-gradient(140deg,#bc8cff33,#1f6feb22);border:3px solid var(--purple);
+          box-shadow:0 30px 80px -20px #bc8cff55}
+  #s3-origin{position:absolute;width:18px;height:18px;border-radius:50%;background:var(--orange);
+             box-shadow:0 0 0 8px #ffa65726, 0 0 24px #ffa65799;margin:-9px 0 0 -9px}
+  #s3-ring{position:absolute;border:2px dashed #ffa65755;border-radius:50%;opacity:0}
+  #s3-chip{position:absolute;left:1290px;top:330px;font-family:var(--mono);font-size:26px;color:#c9d1d9;
+           background:#161b22;border:1px solid var(--line);border-radius:12px;padding:16px 24px}
+  #s3-chip span{color:var(--orange)}
+  #s3-note{position:absolute;left:1290px;top:450px;width:500px;font-size:28px;line-height:1.7;color:#6e7681;opacity:0}
+
+  /* ---------- scene 4 ---------- */
+  #m-grid{position:absolute;left:200px;top:340px;display:grid;grid-template-columns:repeat(3,124px);
+          grid-template-rows:repeat(3,124px);gap:8px}
+  .mcell{display:grid;place-items:center;font-family:var(--mono);font-size:36px;border-radius:14px;
+         background:#11161f;border:1px solid #21262d;color:#c9d1d9;transition:none}
+  .mcell.lin{color:var(--blue);background:#1f6feb1a;border-color:#1f6feb55}
+  .mcell.aff{color:var(--orange);background:#ffa65714;border-color:#ffa65744}
+  .mcell.const{color:var(--faint);background:#0d1117}
+  #m-note{position:absolute;left:200px;top:790px;width:520px;font-size:26px;color:#6e7681;line-height:1.6}
+  #m-note em{color:var(--blue);font-style:normal}
+  #s4-box{position:absolute;left:1170px;top:500px;width:300px;height:200px;border-radius:20px;
+          background:linear-gradient(140deg,#3fb95033,#58a6ff22);border:3px solid var(--green);
+          box-shadow:0 30px 80px -20px #3fb95055}
+  #s4-box::after{content:"元素";position:absolute;inset:0;display:grid;place-items:center;font-size:30px;color:#ffffffcc}
+  #s4-chip{position:absolute;left:1140px;top:300px;font-family:var(--mono);font-size:26px;color:#c9d1d9;
+           background:#161b22;border:1px solid var(--line);border-radius:12px;padding:16px 24px;opacity:0}
+  #s4-chip span{color:var(--green)}
+
+  /* ---------- scene 5 ---------- */
+  #o-line1{position:absolute;left:150px;top:300px;font-size:64px;font-weight:700;opacity:0}
+  #o-line2{position:absolute;left:150px;top:430px;font-size:64px;font-weight:700;opacity:0}
+  #o-line3{position:absolute;left:150px;top:560px;font-size:64px;font-weight:700;opacity:0}
+  .dot{display:inline-block;width:18px;height:18px;border-radius:50%;margin-right:26px;vertical-align:middle}
+  #o-final{position:absolute;left:150px;top:760px;font-size:40px;color:var(--dim);opacity:0}
+
+  /* ---------- chrome ---------- */
+  #bar{position:absolute;left:0;top:0;height:5px;width:0;background:linear-gradient(90deg,var(--blue),var(--purple));z-index:9}
+  #cap{position:absolute;left:0;right:0;bottom:64px;text-align:center;z-index:8;
+       font-size:40px;font-weight:600;color:#eef2f7;text-shadow:0 2px 20px #000c;opacity:0;padding:0 160px}
+  #capwrap{position:absolute;left:50%;transform:translateX(-50%);bottom:40px;width:1300px;height:100px;
+           background:linear-gradient(180deg,transparent,#00000055);z-index:7;opacity:0}
+  #mark{position:absolute;right:96px;bottom:56px;font-family:var(--mono);font-size:20px;color:#3d444d;letter-spacing:2px;z-index:8}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="grid"></div>
+
+  <!-- scene 1 -->
+  <div class="scene" id="scene-title">
+    <div id="t-badge">CODE&nbsp;ANIMATION</div>
+    <div id="t-title">CSS transform</div>
+    <div id="t-sub">它到底改变了什么？</div>
+    <div id="t-line"></div>
+    <div id="t-meta">布局 &nbsp;→&nbsp; 绘制 &nbsp;→&nbsp; 合成</div>
+    <div id="t-squares"></div>
+  </div>
+
+  <!-- scene 2 -->
+  <div class="scene" id="scene-layout">
+    <div class="skicker">CHAPTER 01</div>
+    <div class="stitle"><span class="num">01</span>视觉动了，布局没动</div>
+    <div class="slot" id="s2-slot" style="left:260px;top:400px;width:420px;height:300px">
+      <div class="tag">layout position</div>
+    </div>
+    <div id="s2-box"><span class="inner">元素</span></div>
+    <div id="s2-dim"><div class="cap">420px</div></div>
+    <div id="s2-text">
+      这些文字在文档流里，<br>
+      它们的位置<br>
+      <b>一点都没有改变。</b>
+    </div>
+    <div id="s2-chip">transform: <span>translateX(420px)</span></div>
+    <div id="s2-badge">✓ 无回流 · 无重排</div>
+  </div>
+
+  <!-- scene 3 -->
+  <div class="scene" id="scene-rotate">
+    <div class="skicker">CHAPTER 02</div>
+    <div class="stitle"><span class="num">02</span>旋转中心由谁决定</div>
+    <div id="s3-ghost"></div>
+    <div id="s3-ring"></div>
+    <div id="s3-box"><div id="s3-origin"></div></div>
+    <div id="s3-chip">transform-origin: <span id="s3-orgval">50% 50%</span></div>
+    <div id="s3-note">同一个 rotate(45deg)，<br>换一个原点，<br>轨迹就完全不同。</div>
+  </div>
+
+  <!-- scene 4 -->
+  <div class="scene" id="scene-matrix">
+    <div class="skicker">CHAPTER 03</div>
+    <div class="stitle"><span class="num">03</span>一切都归结为一个矩阵</div>
+    <div id="m-grid">
+      <div class="mcell lin" id="ma">1.00</div>
+      <div class="mcell lin" id="mc">0.00</div>
+      <div class="mcell aff" id="me">0</div>
+      <div class="mcell lin" id="mb">0.00</div>
+      <div class="mcell lin" id="md">1.00</div>
+      <div class="mcell aff" id="mf">0</div>
+      <div class="mcell const">0</div>
+      <div class="mcell const">0</div>
+      <div class="mcell const">1</div>
+    </div>
+    <div id="m-note"><em>a b c d</em> 负责旋转/缩放/斜切<br><em>e f</em> 负责平移</div>
+    <div id="s4-chip">matrix(<span id="s4-vals">1, 0, 0, 1, 0, 0</span>)</div>
+    <div id="s4-box"></div>
+  </div>
+
+  <!-- scene 5 -->
+  <div class="scene" id="scene-outro">
+    <div class="skicker">SUMMARY</div>
+    <div id="o-line1"><span class="dot" style="background:var(--blue)"></span>不改变文档流</div>
+    <div id="o-line2"><span class="dot" style="background:var(--purple)"></span>只影响最终的绘制与合成</div>
+    <div id="o-line3"><span class="dot" style="background:var(--green)"></span>所以便宜，且能交给 GPU</div>
+    <div id="o-final">这就是 transform 适合做动画的真正原因。</div>
+  </div>
+
+  <div id="vignette"></div>
+  <div id="capwrap"></div>
+  <div id="cap"></div>
+  <div id="mark">codeVedio · demo</div>
+  <div id="bar"></div>
+</div>
+
+<script src="timeline.js"></script>
+<script>
+const TL = window.TIMELINE;
+const S = {};
+TL.scenes.forEach(s => S[s.id] = s);
+const D = TL.duration;
+
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const lerp = (a, b, p) => a + (b - a) * p;
+const easeOut = x => 1 - Math.pow(1 - x, 3);
+const easeInOut = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+const easeBack = x => { const c1 = 1.4, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const linear = x => x;
+function seg(t, a, b, ease) {
+  if (b === a) return t >= b ? 1 : 0;
+  return (ease || easeOut)(clamp01((t - a) / (b - a)));
+}
+const $ = id => document.getElementById(id);
+
+// decorative squares for the title scene
+const sqHost = $('t-squares');
+const SQ = [];
+for (let i = 0; i < 5; i++) {
+  const d = document.createElement('div');
+  d.className = 'sq';
+  const size = 120 - i * 14;
+  d.style.width = d.style.height = size + 'px';
+  d.style.left = (i * 96) + 'px';
+  d.style.top = (140 + Math.sin(i) * 40) + 'px';
+  d.style.borderColor = ['#58a6ff66', '#bc8cff66', '#ffa65766', '#3fb95066', '#58a6ff44'][i];
+  sqHost.appendChild(d);
+  SQ.push(d);
+}
+
+function renderTitle(t) {
+  const s = S.title, b = i => s.beats[i].start;
+  const p0 = seg(t, b(0), b(0) + .9, easeOut);
+  $('t-badge').style.opacity = p0;
+  $('t-badge').style.transform = `translateY(${lerp(20, 0, p0)}px)`;
+  const p1 = seg(t, b(0) + .15, b(0) + 1.2, easeOut);
+  $('t-title').style.opacity = p1;
+  $('t-title').style.transform = `translateY(${lerp(60, 0, p1)}px)`;
+  const p2 = seg(t, b(1), b(1) + .8, easeOut);
+  $('t-sub').style.opacity = p2;
+  $('t-sub').style.transform = `translateY(${lerp(30, 0, p2)}px)`;
+  $('t-line').style.width = lerp(0, 560, seg(t, b(1) + .2, b(1) + 1.4, easeInOut)) + 'px';
+  const p3 = seg(t, b(2), b(2) + .7, easeOut);
+  $('t-meta').style.opacity = p3 * .9;
+  SQ.forEach((d, i) => {
+    const p = seg(t, b(2) + i * .08, b(2) + .6 + i * .08, easeBack);
+    d.style.opacity = p * .9;
+    d.style.transform = `rotate(${lerp(-30, 0, p)}deg) scale(${lerp(.4, 1, p)})`;
+  });
+}
+
+function renderLayout(t) {
+  const s = S.layout, b = i => s.beats[i].start;
+  const pChip = seg(t, b(0), b(0) + .5);
+  $('s2-chip').style.opacity = pChip;
+  const pMove = seg(t, b(1) + .1, b(2) + 1.6, easeInOut);
+  const dx = 420 * pMove;
+  $('s2-box').style.transform = `translateX(${dx}px)`;
+  $('s2-box').style.boxShadow = `0 30px 90px -20px rgba(31,111,235,${lerp(.25, .55, pMove)})`;
+  $('s2-dim').style.width = dx + 'px';
+  $('s2-dim').style.opacity = pMove > .02 ? 1 : 0;
+  const pBadge = seg(t, b(3), b(3) + .6, easeBack);
+  $('s2-badge').style.opacity = pBadge;
+  $('s2-badge').style.transform = `translateY(${lerp(16, 0, pBadge)}px) scale(${lerp(.9, 1, pBadge)})`;
+  const pText = seg(t, b(4), b(4) + .6);
+  $('s2-text').style.color = pText > .5 ? '#8b949e' : '#6e7681';
+  $('s2-text').style.filter = `brightness(${lerp(1, 1.25, pText)})`;
+}
+
+function renderRotate(t) {
+  const s = S.rotate, b = i => s.beats[i].start;
+  const W = 420, H = 280, LEFT = 610, TOP = 420;
+  // phase 1: rotate about center
+  const a1 = 45 * seg(t, b(0) + .5, b(1) - .1, easeInOut);
+  // phase 2: move origin center -> top-left
+  const pOrg = seg(t, b(1) + .2, b(1) + 1.5, easeInOut);
+  const ox = lerp(W / 2, 0, pOrg), oy = lerp(H / 2, 0, pOrg);
+  // phase 3: rotate about corner
+  const a3 = lerp(a1, 105, seg(t, b(2), b(2) + 1.8, easeInOut));
+  const box = $('s3-box');
+  box.style.transformOrigin = `${ox}px ${oy}px`;
+  box.style.transform = `rotate(${a3}deg)`;
+  $('s3-origin').style.left = ox + 'px';
+  $('s3-origin').style.top = oy + 'px';
+  $('s3-chip').style.opacity = seg(t, b(0), b(0) + .5);
+  $('s3-orgval').textContent = pOrg > .5 ? '0 0' : '50% 50%';
+  $('s3-orgval').style.color = pOrg > .5 ? 'var(--orange)' : '#c9d1d9';
+  $('s3-note').style.opacity = seg(t, b(2), b(2) + .6);
+  // orbit ring around the corner during phase 3
+  const ring = $('s3-ring');
+  const R = Math.hypot(W, H) * .5;
+  ring.style.width = ring.style.height = R * 2 + 'px';
+  ring.style.left = (LEFT + ox - R) + 'px';
+  ring.style.top = (TOP + oy - R) + 'px';
+  ring.style.opacity = seg(t, b(2), b(2) + .8) * .8;
+}
+
+function renderMatrix(t) {
+  const s = S.matrix, b = i => s.beats[i].start;
+  const p = seg(t, b(0) + .2, b(0) + 2.2, easeInOut);
+  const th = lerp(0, 16, p) * Math.PI / 180;
+  const sc = lerp(1, 1.12, p);
+  const a = sc * Math.cos(th), bb = sc * Math.sin(th);
+  const c = -sc * Math.sin(th), d = sc * Math.cos(th);
+  const e = Math.round(lerp(0, 96, p)), f = Math.round(lerp(0, -46, p));
+  $('ma').textContent = a.toFixed(2);
+  $('mb').textContent = bb.toFixed(2);
+  $('mc').textContent = c.toFixed(2);
+  $('md').textContent = d.toFixed(2);
+  $('me').textContent = e;
+  $('mf').textContent = f;
+  $('s4-vals').textContent = `${a.toFixed(2)}, ${bb.toFixed(2)}, ${c.toFixed(2)}, ${d.toFixed(2)}, ${e}, ${f}`;
+  $('s4-box').style.transform = `matrix(${a},${bb},${c},${d},${e},${f})`;
+  $('s4-chip').style.opacity = seg(t, b(1) - .2, b(1) + .5);
+  $('m-note').style.opacity = .45 + .55 * seg(t, b(1), b(1) + .6);
+}
+
+function renderOutro(t) {
+  const s = S.outro, b = i => s.beats[i].start;
+  const rows = ['o-line1', 'o-line2', 'o-line3'];
+  const t0 = b(0);
+  rows.forEach((id, i) => {
+    const p = seg(t, t0 + .2 + i * .55, t0 + .9 + i * .55, easeOut);
+    const el = $(id);
+    el.style.opacity = p;
+    el.style.transform = `translateX(${lerp(-40, 0, p)}px)`;
+  });
+  const pf = seg(t, b(1) + .3, b(1) + 1.1, easeOut);
+  $('o-final').style.opacity = pf * .95;
+  $('o-final').style.transform = `translateY(${lerp(20, 0, pf)}px)`;
+}
+
+function setScene(id, on, alpha) {
+  const el = $('scene-' + id);
+  el.style.opacity = on ? alpha : 0;
+  el.style.visibility = on ? 'visible' : 'hidden';
+}
+
+window.seek = function (ms) {
+  const t = ms;
+  TL.scenes.forEach(s => {
+    const inRange = t >= s.start - 30 && t < s.end + 30;
+    const a = Math.min(1, Math.max(0, (t - s.start) / 240)) * Math.min(1, Math.max(0, (s.end - t) / 160));
+    setScene(s.id, inRange, Math.max(.001, a));
+  });
+  // caption: 一句字幕持续到下一句开口，避免句间空隙闪烁
+  let cur = null, curEnd = 0;
+  for (const s of TL.scenes) {
+    if (t >= s.start - 60 && t < s.end) {
+      for (let i = 0; i < s.beats.length; i++) {
+        const bt = s.beats[i];
+        const winEnd = (i + 1 < s.beats.length) ? s.beats[i + 1].start - 60 : s.end - 40;
+        if (t >= bt.start - 80 && t < winEnd) { cur = bt; curEnd = winEnd; }
+      }
+    }
+  }
+  const cap = $('cap');
+  if (cur) {
+    if (cap.textContent !== cur.cap) cap.textContent = cur.cap;
+    const a = Math.min(1, (t - cur.start + 80) / 150) * Math.min(1, (curEnd - t) / 130);
+    cap.style.opacity = Math.max(0, a) * .96;
+    $('capwrap').style.opacity = 1;
+  } else { cap.style.opacity = 0; $('capwrap').style.opacity = 0; }
+
+  $('bar').style.width = (t / D * 1920) + 'px';
+
+  if (S.title && t >= S.title.start - 30 && t < S.title.end + 30) renderTitle(t);
+  if (S.layout && t >= S.layout.start - 30 && t < S.layout.end + 30) renderLayout(t);
+  if (S.rotate && t >= S.rotate.start - 30 && t < S.rotate.end + 30) renderRotate(t);
+  if (S.matrix && t >= S.matrix.start - 30 && t < S.matrix.end + 30) renderMatrix(t);
+  if (S.outro && t >= S.outro.start - 30 && t < S.outro.end + 30) renderOutro(t);
+};
+
+window.seek(0);
+window.__ready = true;
+</script>
+</body>
+</html>

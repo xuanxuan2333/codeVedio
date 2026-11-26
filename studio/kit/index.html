@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>code-animation-studio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+  <div id="grid"></div>
+  <div id="vignette"></div>
+  <div id="aside"></div>
+  <div id="capwrap"><span id="cap"></span></div>
+  <div id="prog"></div>
+</div>
+<script src="storyboard.js"></script>
+<script>window.RENDER_MODE = window.RENDER_MODE === true;</script>
+<script src="scenes.js"></script>
+<script>
+// 非渲染模式：用真实时间循环播放，方便人工预览
+if (!window.RENDER_MODE && !location.search.includes('static')) {
+  const t0 = performance.now();
+  (function loop(){
+    const t = performance.now() - t0;
+    window.seek(t % (window.STORYBOARD.duration * 1000));
+    requestAnimationFrame(loop);
+  })();
+}
+</script>
+</body>
+</html>

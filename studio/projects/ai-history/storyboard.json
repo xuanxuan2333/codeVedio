@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "title": "AI 发展史",
+    "slug": "ai-history",
+    "voice": "zh-CN-YunxiNeural",
+    "rate": "+8%",
+    "fps": 30,
+    "hold": 0.4
+  },
+  "scenes": [
+    {
+      "id": "s1",
+      "type": "title",
+      "say": "诶，那个，大家好。今天呢，我们聊聊 AI 的发展史。",
+      "params": {
+        "kicker": "AI HISTORY",
+        "title": "AI 发展史",
+        "sub": "七十年，几次起落",
+        "meta": "科普 · 科技史"
+      }
+    },
+    {
+      "id": "s2",
+      "type": "stat",
+      "say": "嗯，最早是 1956 年达特茅斯会议，麦卡锡他们提出了「人工智能」这个词。",
+      "params": {
+        "value": 1956,
+        "decimals": 0,
+        "unit": "年",
+        "label": "达特茅斯会议",
+        "note": "人工智能这个词，就在这里诞生"
+      }
+    },
+    {
+      "id": "s3",
+      "type": "quote",
+      "say": "然后中间经历了好几次寒冬，钱烧完了就没人管了。",
+      "params": {
+        "text": "钱烧完了，<br>就没人管了。",
+        "by": "AI 寒冬"
+      }
+    },
+    {
+      "id": "s4",
+      "type": "stat",
+      "say": "再后来 2012 年 AlexNet 出来，深度学习一下就火了。",
+      "params": {
+        "value": 2012,
+        "decimals": 0,
+        "unit": "年",
+        "label": "AlexNet",
+        "note": "深度学习重新点火"
+      }
+    },
+    {
+      "id": "s5",
+      "type": "brand",
+      "say": "现在呢，就是英伟达的天下。",
+      "params": {
+        "name": "NVIDIA",
+        "color": "#76b900",
+        "note": "算力成了新的石油"
+      }
+    },
+    {
+      "id": "s6",
+      "type": "person",
+      "say": "黄仁勋天天在台上发显卡。",
+      "params": {
+        "name": "黄仁勋",
+        "role": "NVIDIA 创始人 & CEO",
+        "note": "台上发显卡，台下抢着买单。",
+        "photo": "assets/jensen.jpg",
+        "credit": "Photo: Prime Minister's Office / GODL-India · Wikimedia Commons"
+      }
+    },
+    {
+      "id": "s7",
+      "type": "bullets",
+      "say": "主要就三个阶段吧：符号主义、连接主义、大模型时代。",
+      "params": {
+        "title": "三个阶段",
+        "items": [
+          "<em>符号主义</em>：把知识写成规则",
+          "<em>连接主义</em>：让机器自己学",
+          "<em>大模型</em>：用数据把规模堆上去"
+        ]
+      }
+    }
+  ]
+}

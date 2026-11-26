@@ -1,0 +1,66 @@
+# ---------- Python / Node 依赖与虚拟环境 ----------
+.venv/
+.conda-manim/
+node_modules/
+.npm-cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# ---------- 密钥与本地配置 ----------
+.env
+.env.*
+!.env.example
+*.pem
+
+# ---------- 渲染中间产物（都能用命令重建） ----------
+# 每个项目：音频缓存、成片、工作目录、截图
+studio/projects/*/audio/
+studio/projects/*/stills/
+studio/projects/*/out/*
+# 只保留 demo 的成片和封面，用来在 GitHub 上直接展示
+!studio/projects/demo/out/why-animation.mp4
+!studio/projects/demo/out/poster.png
+# build.mjs 每次从 kit/ 复制过去的文件
+studio/projects/*/index.html
+studio/projects/*/style.css
+studio/projects/*/scenes.js
+studio/projects/*/storyboard.js
+studio/projects/*/meta.json
+studio/projects/*/_tts.job.json
+studio/projects/*/_tts.job.result.json
+
+# 音色 A/B 试听产物
+studio/ab/
+voice-ab.mp3
+voice-check.mp3
+
+# 老管线 demo 的配音与原始渲染
+demo/audio/
+demo/preview/
+demo/video_raw.mp4
+
+# manim 的中间渲染产物（scene.py 保留）
+compare/manim/media/
+
+# 无头 Chrome 的临时 profile
+.chrome-profile/
+.chrome-profile-*/
+.chrome-[0-9]*/
+demo/.chrome-profile*
+compare/.chrome-*/
+studio/projects/*/.chrome-profile/
+
+# ---------- 本地示例：体积大、素材版权复杂，暂不公开 ----------
+# politics 的 assets 约 19MB、成片约 53MB；需要时再单独放
+studio/projects/politics/
+
+# ---------- 系统 / 编辑器 ----------
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.swp
+.idea/
+.vscode/

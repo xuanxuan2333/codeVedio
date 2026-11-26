@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>代码动画工具横评 · 同一段 5 秒动画，8 种写法</title>
+<style>
+  :root{
+    --bg:#0a0c10; --panel:#10151d; --panel2:#0d1219; --line:#202836;
+    --fg:#e6edf3; --dim:#8b949e; --faint:#5b6573;
+    --blue:#58a6ff; --purple:#bc8cff; --green:#3fb950; --orange:#ffa657;
+    --teal:#39d3c3; --pink:#f778ba;
+    --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--fg);font-family:var(--sans);
+       -webkit-font-smoothing:antialiased;line-height:1.65;
+       background-image:radial-gradient(900px 500px at 50% -100px,#16202e 0%,transparent 60%)}
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 32px}
+
+  /* ---------- hero ---------- */
+  header{padding:96px 0 56px;border-bottom:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:13px;letter-spacing:.32em;color:var(--faint);
+          text-transform:uppercase;margin-bottom:22px}
+  h1{font-size:56px;line-height:1.15;font-weight:800;letter-spacing:-1.2px;margin-bottom:22px}
+  h1 .grad{background:linear-gradient(94deg,var(--blue) 10%,var(--purple) 60%,var(--pink) 95%);
+           -webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:20px;color:#b8c2cf;max-width:820px}
+  .stats{display:flex;gap:52px;margin-top:44px;flex-wrap:wrap}
+  .stat b{display:block;font-size:40px;font-weight:800;font-family:var(--mono);letter-spacing:-1px}
+  .stat span{font-size:14px;color:var(--dim)}
+
+  /* ---------- generic ---------- */
+  section{padding:76px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:12px}
+  h2 .n{font-family:var(--mono);color:var(--blue);font-size:18px;margin-right:14px;vertical-align:2px}
+  .sub{color:var(--dim);font-size:16px;margin-bottom:40px;max-width:800px}
+
+  .callout{background:linear-gradient(180deg,#111a26,#0d131b);border:1px solid #1d2c3d;
+           border-radius:16px;padding:26px 30px;margin:26px 0}
+  .callout p{font-size:17px;color:#c2ccd9}
+  .callout b{color:#fff}
+  .quote{border-left:3px solid var(--blue);padding-left:20px;font-size:19px;color:#c2ccd9}
+
+  /* ---------- table ---------- */
+  .tscroll{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:var(--panel2)}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;min-width:980px}
+  th,td{padding:14px 16px;text-align:left;border-bottom:1px solid #1a212c;vertical-align:top}
+  th{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);
+     font-weight:600;background:#0f141c;position:sticky;top:0;white-space:nowrap}
+  tr:last-child td{border-bottom:none}
+  tbody tr:hover{background:#121924}
+  td.name{font-weight:700;white-space:nowrap}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:9px;vertical-align:1px}
+  .tag{display:inline-block;font-size:11.5px;font-family:var(--mono);padding:2px 8px;border-radius:6px;
+       border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+  .tag.ok{color:#7ee787;border-color:#2ea04366;background:#2ea0431a}
+  .tag.no{color:#ffa198;border-color:#f8514966;background:#f851491a}
+  .tag.warn{color:#e3b341;border-color:#d2992266;background:#d299221a}
+  .stars{font-family:var(--mono);color:var(--orange);letter-spacing:1px}
+
+  /* ---------- samples ---------- */
+  .samples{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .sample{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--panel2)}
+  .sample video{width:100%;display:block;background:#000;aspect-ratio:16/9}
+  .sample .meta{padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .sample .meta b{font-size:15px}
+  .sample .meta span{font-family:var(--mono);font-size:12px;color:var(--faint)}
+  .syncbar{display:flex;align-items:center;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+  button{font-family:var(--sans);font-size:14px;font-weight:600;color:var(--fg);
+         background:#1a2331;border:1px solid #2b3648;border-radius:10px;padding:10px 20px;cursor:pointer;
+         transition:.15s}
+  button:hover{background:#22303f;border-color:#3a4a61}
+  button.primary{background:linear-gradient(180deg,#1f6feb,#1a5fd0);border-color:#2d7ff9}
+  button.primary:hover{background:linear-gradient(180deg,#2b7cf5,#1f6feb)}
+  .hint{font-size:13px;color:var(--faint)}
+
+  /* ---------- cards ---------- */
+  .card{border:1px solid var(--line);border-radius:18px;margin-bottom:22px;overflow:hidden;background:var(--panel)}
+  .card-h{display:flex;align-items:center;gap:16px;padding:22px 26px;border-bottom:1px solid var(--line);
+          background:linear-gradient(90deg,#131a24,#10151d)}
+  .card-h .idx{font-family:var(--mono);font-size:13px;color:var(--faint)}
+  .card-h h3{font-size:23px;font-weight:800;letter-spacing:-.3px}
+  .card-h .pos{font-size:13.5px;color:var(--dim);margin-left:auto;text-align:right;max-width:420px}
+  .card-b{padding:24px 26px;display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .card-b .col h4{font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
+  .pros h4{color:#7ee787}.cons h4{color:#ffa198}
+  .card li{list-style:none;font-size:14.6px;color:#c2ccd9;padding-left:20px;position:relative;margin-bottom:9px}
+  .card li::before{position:absolute;left:0;top:0;font-family:var(--mono);font-size:13px}
+  .pros li::before{content:"+";color:#3fb950}
+  .cons li::before{content:"−";color:#f85149}
+  .card-f{padding:14px 26px 20px;border-top:1px solid #1a212c;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .verdict{font-size:14px;color:var(--dim)}
+  .verdict b{color:#dbe4ee;font-weight:600}
+
+  /* ---------- code tabs ---------- */
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:0}
+  .tab{font-family:var(--mono);font-size:13px;padding:9px 16px;border-radius:10px 10px 0 0;cursor:pointer;
+       color:var(--dim);border:1px solid transparent;border-bottom:none;background:#0d1219}
+  .tab.active{color:#fff;background:#131b26;border-color:var(--line)}
+  pre{background:#131b26;border:1px solid var(--line);border-top-left-radius:0;border-radius:0 12px 12px 12px;
+      padding:22px 24px;overflow:auto;font-family:var(--mono);font-size:13.4px;line-height:1.75;color:#c9d1d9;
+      max-height:none}
+  pre .k{color:#ff7b72}pre .s{color:#a5d6ff}pre .c{color:#6e7681;font-style:italic}
+  pre .f{color:#d2a8ff}pre .n{color:#79c0ff}pre .t{color:#7ee787}
+  .codefoot{font-size:13px;color:var(--faint);margin-top:14px}
+
+  /* ---------- decision ---------- */
+  .decide{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .d{border:1px solid var(--line);border-radius:14px;padding:22px;background:var(--panel2)}
+  .d .q{font-size:15px;color:var(--dim);margin-bottom:10px}
+  .d .a{font-size:19px;font-weight:700;margin-bottom:8px}
+  .d .why{font-size:13.5px;color:var(--faint)}
+
+  footer{padding:56px 0 80px;color:var(--faint);font-size:13.5px}
+  footer p{margin-bottom:8px}
+  code{font-family:var(--mono);background:#1a212c;padding:2px 7px;border-radius:5px;font-size:.92em;color:#c9d1d9}
+  @media(max-width:860px){
+    h1{font-size:38px}.samples{grid-template-columns:1fr}.card-b{grid-template-columns:1fr}
+    .card-h{flex-wrap:wrap}.card-h .pos{margin-left:0;text-align:left}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Code Animation · 工具横评</div>
+    <h1>同一段 <span class="grad">5 秒动画</span><br>8 种代码写法</h1>
+    <p class="lede">
+      你在 B 站看到的那些「用动画讲清一个原理」的片子，基本都是程序化渲染出来的：
+      写代码描述图形和时间轴，渲染器把它变成一帧帧画面。
+      这里用同一个镜头（平移 → 旋转 → 缩放 → 变色）在主流工具里各写一遍，并给出真实产物、优劣和选型建议。
+    </p>
+    <div class="stats">
+      <div class="stat"><b>8</b><span>工具 / 框架</span></div>
+      <div class="stat"><b>3</b><span>本机真实渲染</span></div>
+      <div class="stat"><b>1</b><span>完整成片（70s）</span></div>
+      <div class="stat"><b>0</b><span>需要 GPU</span></div>
+    </div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">01</span>先给结论</h2>
+    <p class="sub">三句话，看完可以关页面去干活。</p>
+
+    <div class="callout">
+      <p class="quote" style="margin-bottom:22px">
+        这类视频的本质不是「视频」，是<b>程序化图形 + 时间轴</b>。<br>
+        AI 不生成像素，<b>AI 生成代码</b>，代码再被渲染器逐帧画出来。
+      </p>
+      <p style="color:#9aa7b6;font-size:15.5px">
+        这正是它和 Sora / 可灵那类「文生视频」最根本的区别：前者是<b style="color:#7ee787">确定性渲染</b>——同一份代码永远出同一帧；
+        后者是<b style="color:#ffa198">概率采样</b>——每次都不一样，文字必糊、几何必漂。
+        讲原理要精确，只能走前者。
+      </p>
+    </div>
+
+    <div class="decide" style="margin-top:26px">
+      <div class="d">
+        <div class="q">讲数学 / 公式 / 物理</div>
+        <div class="a" style="color:var(--blue)">Manim</div>
+        <div class="why">LaTeX 公式、几何变换是它的母语，3Blue1Brown 同款</div>
+      </div>
+      <div class="d">
+        <div class="q">讲前端 / 浏览器 / 代码 / 系统</div>
+        <div class="a" style="color:var(--green)">HTML 系</div>
+        <div class="why">HyperFrames、vawe、裸 Puppeteer——网页本身就是画面</div>
+      </div>
+      <div class="d">
+        <div class="q">要批量、上云、团队协作</div>
+        <div class="a" style="color:var(--teal)">Remotion</div>
+        <div class="why">React 组件即视频，Lambda 分布式渲染，有官方 Agent Skills</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">02</span>总览：一张表看清</h2>
+    <p class="sub">「时间模型」是最关键的一列——它决定了你脑子里要装的概念，也决定了 AI 写起来是顺手还是别扭。</p>
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th>工具</th><th>你写什么</th><th>时间模型</th><th>渲染后端</th>
+            <th>许可证</th><th>上手</th><th>AI 友好</th><th>本机实拍</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="name"><span class="dot" style="background:var(--blue)"></span>Manim CE</td>
+            <td>Python 场景类</td>
+            <td>对象 + <code>play()</code> 动画队列</td>
+            <td>Cairo / OpenGL → ffmpeg</td>
+            <td>MIT</td><td class="stars">★★★☆</td><td class="stars">★★★★</td>
+            <td><span class="tag ok">✓ 已渲染</span></td>
+          </tr>
+          <tr>
+            <td class="name"><span class="dot" style="background:#1f6feb"></span>ManimGL</td>
+            <td>Python（3b1b 自用版）</td>
+            <td>同上，实时预览</td>
+            <td>OpenGL 实时窗口</td>
+            <td>MIT</td><td class="stars">★★☆</td><td class="stars">★★★</td>
+            <td><span class="tag">未渲染</span></td>
+          </tr>
+          <tr>
+            <td class="name"><span class="dot" style="background:var(--purple)"></span>Motion Canvas</td>
+            <td>TypeScript 生成器</td>
+            <td><code>yield*</code> 生成器，播放头推进</td>
+            <td>浏览器渲染 → 图片序列</td>
+            <td>MIT</td><td class="stars">★★★</td><td class="stars">★★★</td>
+            <td><span class="tag">未渲染</span></td>
+          </tr>
+          <tr>
+            <td class="name"><span class="dot" style="background:var(--teal)"></span>Remotion</td>
+            <td>React 组件</td>
+            <td><code>frame</code> 的纯函数，无状态</td>
+            <td>Node 无头 Chrome → ffmpeg</td>
+            <td>免费 ≤3 人 / 商用授权</td><td class="stars">★★★☆</td><td class="stars">★★★★</td>
+            <td><span class="tag ok">✓ 已渲染</span></td>
+          </tr>
+          <tr>
+            <td class="name"><span class="dot" style="background:var(--orange)"></span>Revideo</td>
+            <td>TypeScript 场景</td>
+            <td>生成器（Motion Canvas 分支）</td>
+            <td>自托管渲染 API</td>
+            <td>MIT</td><td class="stars">★★★</td><td class="stars">★★★★</td>
+            <td><span class="tag">未渲染</span></td>
+          </tr>
+          <tr>
+            <td class="name"><span class="dot" style="background:var(--green)"></span>HyperFrames</td>
+            <td>纯 HTML + <code>data-*</code></td>
+            <td>声明式时间属性，引擎按帧 seek</td>
+            <td>无头 Chrome seek → ffmpeg</td>
+            <td>Apache-2.0</td><td class="stars">★★☆</td><td class="stars">★★★★★</td>
+            <td><span class="tag warn">需 Node ≥22</span></td>
+          </tr>
+          <tr>
+            <td class="name"><span class="dot" style="background:var(--pink)"></span>vawe</td>
+            <td>一整页普通 HTML</td>
+            <td>虚拟时钟，替换真实时间</td>
+            <td>无头 Chrome 截图</td>
+            <td>Apache-2.0</td><td class="stars">★★</td><td class="stars">★★★★</td>
+            <td><span class="tag">未渲染</span></td>
+          </tr>
+          <tr>
+            <td class="name"><span class="dot" style="background:#f0883e"></span>裸 HTML + Puppeteer</td>
+            <td>任意网页 + <code>seek(t)</code></td>
+            <td>自己定义 <code>f(t)</code></td>
+            <td>无头 Chrome + ffmpeg</td>
+            <td>自己的代码</td><td class="stars">★★</td><td class="stars">★★★★★</td>
+            <td><span class="tag ok">✓ 已渲染</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="codefoot">
+      「AI 友好」= 语言模型写这类代码的顺手程度 + 生态里有没有现成的 Agent 支持，非官方评分。
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">03</span>真实产物：同一个镜头，三种渲染</h2>
+    <p class="sub">
+      同一份镜头脚本（平移 1.5s → 旋转 1s → 缩放 1s → 变色 + 出字 0.9s），
+      分别在 Manim、Remotion、裸 HTML+Puppeteer 里实现并渲染。都是 1280×720 / 30fps / 5 秒。<br>
+      <span style="color:var(--orange)">注意看差异</span>：Manim 的动画是「对象的属性变迁」，Remotion 是「帧号查表」，纯 HTML 是「我按时钟算样式」。
+      最终的画面可以做到几乎一样，但写代码时脑子里想的事情完全不同。
+    </p>
+
+    <div class="syncbar">
+      <button class="primary" id="sync">⟳ 同步播放三条</button>
+      <span class="hint">三段视频会从头同时播放，方便对比节奏和缓动差异</span>
+    </div>
+
+    <div class="samples">
+      <div class="sample">
+        <video id="v-manim" src="__MANIM__" muted loop playsinline autoplay controls></video>
+        <div class="meta"><b style="color:var(--blue)">Manim CE 0.22</b><span>python · 4.5s</span></div>
+      </div>
+      <div class="sample">
+        <video id="v-remotion" src="__REMOTION__" muted loop playsinline autoplay controls></video>
+        <div class="meta"><b style="color:var(--teal)">Remotion 4.0</b><span>react · 5.0s</span></div>
+      </div>
+      <div class="sample">
+        <video id="v-html" src="__HTML__" muted loop playsinline autoplay controls></video>
+        <div class="meta"><b style="color:#f0883e">HTML + Puppeteer</b><span>js · 5.0s</span></div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:26px">
+      <p style="font-size:15.5px">
+        <b>为什么只实拍了这三个？</b>
+        另外几个要么需要 Node ≥ 22（HyperFrames 会直接拒绝启动），要么需要先搭一套 Vite / 浏览器项目脚手架（Motion Canvas、Revideo）。
+        Motion Canvas 和 Revideo 的代码在第 05 节照写不误——它们的 API 是清楚的，只是本机没跑通渲染链。
+        <b style="color:#7ee787">能跑的都跑了，没跑的会明说。</b>
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">04</span>八个工具，逐个说优劣</h2>
+    <p class="sub">不吹不黑。每条都尽量具体到「你会踩到什么」。</p>
+
+    <!-- Manim -->
+    <div class="card">
+      <div class="card-h">
+        <span class="idx">01</span><h3 style="color:var(--blue)">Manim CE</h3>
+        <span class="pos">Python 数学动画的默认答案，3Blue1Brown 的开源引擎</span>
+      </div>
+      <div class="card-b">
+        <div class="col pros"><h4>优势</h4><ul>
+          <li>公式排版是原生能力，LaTeX 直接写成对象，这是其他工具追不上的</li>
+          <li>几何变换、坐标系、函数图像有大量现成积木（Axes、Transform、Mobject）</li>
+          <li>社区语料最厚，LLM 训练数据里 Manim 代码非常多，AI 写它的命中率最高</li>
+          <li>同一个对象可以「变形」成另一个对象，这是它的杀手锏</li>
+        </ul></div>
+        <div class="col cons"><h4>短板</h4><ul>
+          <li>依赖重：cairo、pango、LaTeX，装环境就能劝退一半人（本机是 conda 装的）</li>
+          <li>没有实时预览，改一行等一次渲染；分镜级调试很慢</li>
+          <li>排版是手工坐标，文字多了容易叠在一起，AI 尤其容易犯这个错</li>
+          <li>做网页 UI、代码高亮、复杂图表要自己造轮子</li>
+        </ul></div>
+      </div>
+      <div class="card-f">
+        <span class="tag ok">✓ 本机已渲染</span><span class="tag">MIT</span>
+        <span class="verdict"><b>选它：</b>你要讲的是数学、物理、算法，公式是主角。</span>
+      </div>
+    </div>
+
+    <!-- ManimGL -->
+    <div class="card">
+      <div class="card-h">
+        <span class="idx">02</span><h3 style="color:#1f6feb">ManimGL</h3>
+        <span class="pos">3b1b 本人天天在用的那一版，实时、但更野</span>
+      </div>
+      <div class="card-b">
+        <div class="col pros"><h4>优势</h4><ul>
+          <li>OpenGL 实时预览，改代码立刻能看到，调动画手感最好</li>
+          <li>3b1b 视频里的效果都能复现（他用的就是这个）</li>
+          <li>性能好，长片段渲染比 CE 快</li>
+        </ul></div>
+        <div class="col cons"><h4>短板</h4><ul>
+          <li>API 不稳定，版本之间会破坏性变更，网上教程经常对不上</li>
+          <li>文档远不如社区版，出问题基本靠读源码</li>
+          <li>需要图形界面，服务器上跑不了（无头渲染要额外折腾）</li>
+        </ul></div>
+      </div>
+      <div class="card-f">
+        <span class="tag">未渲染</span><span class="tag">MIT</span>
+        <span class="verdict"><b>选它：</b>你已经是 Manim 熟手，且需要实时调手感。</span>
+      </div>
+    </div>
+
+    <!-- Motion Canvas -->
+    <div class="card">
+      <div class="card-h">
+        <span class="idx">03</span><h3 style="color:var(--purple)">Motion Canvas</h3>
+        <span class="pos">为「矢量图解」而生的编辑器，生成器语法的代表</span>
+      </div>
+      <div class="card-b">
+        <div class="col pros"><h4>优势</h4><ul>
+          <li>带可视化编辑器：拖时间轴、实时看画面，调分镜比 Manim 舒服太多</li>
+          <li><code>yield*</code> 生成器让「等这个动画播完再播下一个」写起来像同步代码</li>
+          <li>天生适合画流程图、示意图、架构图，配配音做知识类内容很顺</li>
+          <li>MIT，纯前端栈，不用担心许可证</li>
+        </ul></div>
+        <div class="col cons"><h4>短板</h4><ul>
+          <li>默认输出是<b>图片序列</b>，要自己再合视频（官方 FFmpeg exporter 比较新）</li>
+          <li>生态小，LLM 见过它的代码远少于 Manim / React，AI 更容易写错 API</li>
+          <li>没有公式排版能力，数学内容要绕路</li>
+          <li>上云批量渲染没有现成方案，得自己搭</li>
+        </ul></div>
+      </div>
+      <div class="card-f">
+        <span class="tag warn">未渲染 · 需项目脚手架</span><span class="tag">MIT</span>
+        <span class="verdict"><b>选它：</b>你要做图解型内容，且愿意在编辑器里手工调。</span>
+      </div>
+    </div>
+
+    <!-- Remotion -->
+    <div class="card">
+      <div class="card-h">
+        <span class="idx">04</span><h3 style="color:var(--teal)">Remotion</h3>
+        <span class="pos">React 组件即视频，工程化程度最高的一档</span>
+      </div>
+      <div class="card-b">
+        <div class="col pros"><h4>优势</h4><ul>
+          <li>「帧号 → 画面」的纯函数模型，确定性极强，天然可测试、可复现</li>
+          <li>React 生态直接复用：任何网页组件、图表库、字体都能塞进画面</li>
+          <li>官方支持 AWS Lambda 分布式渲染，几百条视频可以并行出</li>
+          <li>官方出了 Agent Skills（<code>npx skills add remotion-dev/skills</code>），AI 驱动有正路</li>
+        </ul></div>
+        <div class="col cons"><h4>短板</h4><ul>
+          <li><b>许可证是坑</b>：免费仅限个人 / 非营利 / ≤3 人的公司，超过要买商用授权</li>
+          <li>要懂 React + 构建工具，门槛比「写个 HTML」高</li>
+          <li>没有内建的矢量图形体系，画图得靠 SVG / div 自己拼</li>
+          <li>初次渲染要下载 Chrome Headless Shell，国内网络容易卡住（可用 <code>--browser-executable</code> 指向本机 Chrome）</li>
+        </ul></div>
+      </div>
+      <div class="card-f">
+        <span class="tag ok">✓ 本机已渲染</span><span class="tag no">商用需授权</span>
+        <span class="verdict"><b>选它：</b>你要做系列化、批量、团队协作的产品级视频流水线。</span>
+      </div>
+    </div>
+
+    <!-- Revideo -->
+    <div class="card">
+      <div class="card-h">
+        <span class="idx">05</span><h3 style="color:var(--orange)">Revideo</h3>
+        <span class="pos">Motion Canvas 的「服务端化」分支，渲染 API 可自托管</span>
+      </div>
+      <div class="card-b">
+        <div class="col pros"><h4>优势</h4><ul>
+          <li>MIT + 可自托管，没有 Remotion 那种人数限制</li>
+          <li>一个 <code>renderVideo()</code> 就能把项目渲成 mp4，适合包成后端服务</li>
+          <li>支持把一次渲染拆到多个 worker，规模化比 Motion Canvas 好</li>
+          <li>README 明说「场景就是普通 TypeScript，Claude / Codex 能直接写」</li>
+        </ul></div>
+        <div class="col cons"><h4>短板</h4><ul>
+          <li>生态比 Motion Canvas 还小，文档和示例少</li>
+          <li>没有编辑器，纯代码，调版式靠反复渲染</li>
+          <li>版本迭代快，API 有变动风险</li>
+        </ul></div>
+      </div>
+      <div class="card-f">
+        <span class="tag">未渲染</span><span class="tag">MIT</span>
+        <span class="verdict"><b>选它：</b>你要把「生成视频」做成一个能调用的接口。</span>
+      </div>
+    </div>
+
+    <!-- HyperFrames -->
+    <div class="card">
+      <div class="card-h">
+        <span class="idx">06</span><h3 style="color:var(--green)">HyperFrames</h3>
+        <span class="pos">HeyGen 开源：视频源文件就是纯 HTML，为 Agent 而生</span>
+      </div>
+      <div class="card-b">
+        <div class="col pros"><h4>优势</h4><ul>
+          <li>没有新框架要学：HTML + CSS + <code>data-*</code> 时间属性就是全部</li>
+          <li>官方 21 个 Agent Skills + Claude Code 插件，是这批工具里对 AI 最友好的</li>
+          <li>确定性渲染写进了规范（禁用真实时钟、未播种随机），同输入同输出</li>
+          <li>Apache-2.0，还能上 AWS Lambda / Cloud Run 渲染</li>
+        </ul></div>
+        <div class="col cons"><h4>短板</h4><ul>
+          <li><b>要求 Node ≥ 22</b>，本机 21.7 直接被拒绝启动（这次就卡在这）</li>
+          <li>很新，社区案例少，踩坑只能看文档</li>
+          <li>复杂动画仍要自己写 GSAP / CSS，没有 Manim 那种「对象变形」</li>
+          <li>设计上偏向「页面即视频」，长叙事的分镜管理要靠自己组织</li>
+        </ul></div>
+      </div>
+      <div class="card-f">
+        <span class="tag warn">未渲染 · 本机 Node 21</span><span class="tag">Apache-2.0</span>
+        <span class="verdict"><b>选它：</b>你讲的是网页技术，且想让 AI 直接写 HTML 出片。</span>
+      </div>
+    </div>
+
+    <!-- vawe -->
+    <div class="card">
+      <div class="card-h">
+        <span class="idx">07</span><h3 style="color:var(--pink)">vawe</h3>
+        <span class="pos">最激进的一派：你写的页面就是电影，不需要构建</span>
+      </div>
+      <div class="card-b">
+        <div class="col pros"><h4>优势</h4><ul>
+          <li>用虚拟时钟替换 <code>Date</code>、定时器、<code>rAF</code>、<code>Math.random</code>，普通网页直接变确定性视频</li>
+          <li>不需要改写成某种 DSL，现有页面 CSS 动画原样跑</li>
+          <li>Apache-2.0，没有人数限制</li>
+        </ul></div>
+        <div class="col cons"><h4>短板</h4><ul>
+          <li>生态极小，只有本地渲染，没有云渲染</li>
+          <li>没有时间轴编辑器，复杂编排全靠手写</li>
+          <li>依赖「页面本身写得好」，页面写得乱，片子就乱</li>
+        </ul></div>
+      </div>
+      <div class="card-f">
+        <span class="tag">未渲染</span><span class="tag">Apache-2.0</span>
+        <span class="verdict"><b>选它：</b>你已经有一堆网页素材，只想合成为视频。</span>
+      </div>
+    </div>
+
+    <!-- Puppeteer -->
+    <div class="card">
+      <div class="card-h">
+        <span class="idx">08</span><h3 style="color:#f0883e">裸 HTML + Puppeteer</h3>
+        <span class="pos">不到 60 行，最透明、最容易让 AI 接管的那条路</span>
+      </div>
+      <div class="card-b">
+        <div class="col pros"><h4>优势</h4><ul>
+          <li>没有黑盒：<code>seek(t)</code> → 截图 → 管道给 ffmpeg，全程看得见</li>
+          <li>零框架依赖，出问题一定是你的问题，一定能定位</li>
+          <li>AI 最好写——HTML/CSS/JS 是训练数据里最多的东西</li>
+          <li>本项目 70 秒正片就是这么渲的：2123 帧，124 秒</li>
+        </ul></div>
+        <div class="col cons"><h4>短板</h4><ul>
+          <li>分镜管理、时间轴、并行渲染、音频对齐，全要自己写</li>
+          <li>性能靠调：PNG 截图 327ms/帧，换 JPEG 后 56ms/帧，差 6 倍</li>
+          <li>没有编辑器，改一版要看一版</li>
+          <li>团队协作时缺少约定，容易各写各的</li>
+        </ul></div>
+      </div>
+      <div class="card-f">
+        <span class="tag ok">✓ 本机已渲染</span><span class="tag">自己的代码</span>
+        <span class="verdict"><b>选它：</b>你想先跑通闭环，或者要做高度定制的东西。</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">05</span>代码对照：同一个镜头，怎么写</h2>
+    <p class="sub">这是最有信息量的部分——你能一眼看出每个工具「脑子里在想什么」。</p>
+
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-k="manim">Manim</div>
+      <div class="tab" data-k="mc">Motion Canvas</div>
+      <div class="tab" data-k="remotion">Remotion</div>
+      <div class="tab" data-k="revideo">Revideo</div>
+      <div class="tab" data-k="hf">HyperFrames</div>
+      <div class="tab" data-k="vawe">vawe</div>
+      <div class="tab" data-k="raw">裸 HTML + Puppeteer</div>
+    </div>
+
+    <pre id="codebox"></pre>
+    <p class="codefoot" id="codefoot"></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">06</span>怎么选：三个问题定下来</h2>
+    <p class="sub">按顺序问自己，第一个「是」就是答案。</p>
+    <div class="decide">
+      <div class="d">
+        <div class="q">① 内容里有大量公式 / 坐标 / 函数图像？</div>
+        <div class="a" style="color:var(--blue)">Manim</div>
+        <div class="why">别的工具做公式要自己拼 SVG，属于逆天而行</div>
+      </div>
+      <div class="d">
+        <div class="q">② 讲的是网页、浏览器、前端、代码本身？</div>
+        <div class="a" style="color:var(--green)">HTML 系</div>
+        <div class="why">HyperFrames（Node≥22）/ vawe / 裸 Puppeteer，任选</div>
+      </div>
+      <div class="d">
+        <div class="q">③ 要做系列、批量、多人协作、上云？</div>
+        <div class="a" style="color:var(--teal)">Remotion</div>
+        <div class="why">先确认公司人数，超过 3 人要买商用授权</div>
+      </div>
+      <div class="d">
+        <div class="q">④ 都不是，只想先跑通一条闭环？</div>
+        <div class="a" style="color:#f0883e">裸 Puppeteer</div>
+        <div class="why">60 行代码，两小时能出第一条片子</div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:30px">
+      <p style="font-size:15.5px;margin-bottom:12px"><b>一个反直觉的建议：</b></p>
+      <p style="font-size:15.5px;color:#9aa7b6">
+        如果你打算让 AI 来批量生产，<b style="color:#fff">不要选自由度最高的工具，要选约束最强的。</b>
+        Manim 的自由度是「什么都能画」，所以 AI 什么都敢画，翻车率也最高；
+        HyperFrames / 裸 HTML 的自由度是「一个 HTML 页面」，AI 反而稳。
+        真正的成品率来自<b style="color:#7ee787">场景库 + 固定栅格 + 渲染后自检</b>，不是来自工具本身。
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2><span class="n">07</span>AI 接入：谁能被 Agent 直接驱动</h2>
+    <p class="sub">2026 年的现实：不是「AI 能不能写动画」，而是「哪个工具给 AI 留了门」。</p>
+    <div class="tscroll">
+      <table>
+        <thead><tr><th>工具</th><th>官方 AI 支持</th><th>实际怎么用</th></tr></thead>
+        <tbody>
+          <tr><td class="name">Remotion</td><td><span class="tag ok">官方 Agent Skills</span></td>
+              <td><code>npx skills add remotion-dev/skills</code>，让 Claude Code 按规范写组件</td></tr>
+          <tr><td class="name">HyperFrames</td><td><span class="tag ok">21 个 skills + 插件</span></td>
+              <td>Claude Code 插件直接写 HTML 组合，官方提供 router skill 分发</td></tr>
+          <tr><td class="name">Revideo</td><td><span class="tag ok">README 明确支持</span></td>
+              <td>「a scene is plain TypeScript」——模型直接写场景文件</td></tr>
+          <tr><td class="name">Manim</td><td><span class="tag warn">社区生态</span></td>
+              <td>manim-mcp（MCP 工具）、manimkit（语料 + linter + render-and-look）、3brown1blue（27 条规则文件）</td></tr>
+          <tr><td class="name">Motion Canvas</td><td><span class="tag no">未见官方</span></td>
+              <td>语言模型懂 TS，但语料少，API 容易编错，需要人兜底</td></tr>
+          <tr><td class="name">vawe</td><td><span class="tag ok">CLI + skills</span></td>
+              <td>把已有页面丢给 CLI 渲染，AI 只需要改页面</td></tr>
+          <tr><td class="name">裸 Puppeteer</td><td><span class="tag ok">天然适合</span></td>
+              <td>没有 API 要记，AI 只需要写 HTML + 一个 <code>seek(t)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout" style="margin-top:26px">
+      <p style="font-size:15.5px">
+        <b>所有能用的方案，都长同一个样：</b>
+        <span style="color:#7ee787">生成代码 → 真渲染 → 看画面 → 发现错了 → 改 → 再渲染</span>。
+        这一步叫 <b>render-and-look</b>。没有它，模型就是在闭着眼睛画图——
+        文字叠在一起、元素飞出画布、颜色撞成一团，它自己完全不知道。
+      </p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b style="color:var(--dim)">测量环境</b>：macOS（Apple Silicon）· Node 21.7.3 · Google Chrome 158 · Python 3.12 · ffmpeg 9.0</p>
+    <p><b style="color:var(--dim)">实际渲染时间</b>：Manim 720p30 约 5 秒片 → 数秒；Remotion 150 帧 → 约 20 秒；裸 HTML+Puppeteer 150 帧 → 约 9 秒（JPEG 管道）</p>
+    <p><b style="color:var(--dim)">未渲染说明</b>：HyperFrames 要求 Node ≥22（本机 21.7 被拒）；Motion Canvas / Revideo 需先搭 Vite 项目脚手架，本次未跑通；vawe 未测。这些工具的代码样例基于其公开文档与 API，未经本机验证。</p>
+    <p style="margin-top:18px;color:#3d444d">Code Animation · 工具横评 · 2026-11</p>
+  </div>
+</footer>
+
+<script>
+const CODE = {
+  manim: {
+    lang: 'Python', note: 'Manim 的模型是「对象 + 动画队列」：每个 play() 是一段以秒计的表演，rate_func 控制缓动。',
+    html: `<span class="c"># manim -qm --fps 30 scene.py Sample</span>
+<span class="k">from</span> manim <span class="k">import</span> *
+
+<span class="k">class</span> <span class="t">Sample</span>(Scene):
+    <span class="k">def</span> <span class="f">construct</span>(self):
+        self.camera.background_color = <span class="s">"#0b0d12"</span>
+
+        box = RoundedRectangle(
+            corner_radius=<span class="n">0.22</span>, width=<span class="n">3.4</span>, height=<span class="n">2.2</span>,
+            stroke_color=BLUE, stroke_width=<span class="n">5</span>,
+            fill_color=BLUE, fill_opacity=<span class="n">0.15</span>,
+        ).move_to(LEFT * <span class="n">3.4</span>)
+
+        <span class="c"># 1. 平移</span>
+        self.play(box.animate.move_to(ORIGIN), run_time=<span class="n">1.5</span>, rate_func=smooth)
+        <span class="c"># 2. 旋转</span>
+        self.play(Rotate(box, angle=PI / <span class="n">4</span>), run_time=<span class="n">1.0</span>, rate_func=smooth)
+        <span class="c"># 3. 缩放</span>
+        self.play(box.animate.scale(<span class="n">1.35</span>), run_time=<span class="n">1.0</span>, rate_func=smooth)
+        <span class="c"># 4. 变色 + 字幕（可以同时发生）</span>
+        label = Text(<span class="s">"translate → rotate → scale"</span>, font_size=<span class="n">30</span>)
+        label.to_edge(DOWN, buff=<span class="n">0.55</span>)
+        self.play(
+            box.animate.set_stroke_color(PURPLE).set_fill(PURPLE, opacity=<span class="n">0.25</span>),
+            FadeIn(label, shift=UP * <span class="n">0.2</span>),
+            run_time=<span class="n">0.9</span>,
+        )`
+  },
+  mc: {
+    lang: 'TypeScript', note: 'Motion Canvas 用生成器函数：yield* 会「等这个动画播完」，动画会按顺序排队。',
+    html: `<span class="k">import</span> {makeScene2D, Rect, Txt} <span class="k">from</span> <span class="s">'@motion-canvas/2d'</span>;
+<span class="k">import</span> {createRef, all, easeInOutCubic} <span class="k">from</span> <span class="s">'@motion-canvas/core'</span>;
+
+<span class="k">export default</span> makeScene2D(<span class="k">function</span>* (view) {
+  view.fill(<span class="s">'#0b0d12'</span>);
+
+  <span class="k">const</span> box = createRef&lt;Rect&gt;();
+  view.add(
+    &lt;Rect ref={box} width={<span class="n">260</span>} height={<span class="n">170</span>} radius={<span class="n">20</span>}
+          stroke={<span class="s">'#58a6ff'</span>} lineWidth={<span class="n">3</span>} fill={<span class="s">'#58a6ff22'</span>}
+          x={<span class="n">-380</span>} /&gt;
+  );
+
+  <span class="k">yield</span>* box().x(<span class="n">0</span>, <span class="n">1.5</span>, easeInOutCubic);          <span class="c">// 平移</span>
+  <span class="k">yield</span>* box().rotation(<span class="n">45</span>, <span class="n">1.0</span>, easeInOutCubic);  <span class="c">// 旋转</span>
+  <span class="k">yield</span>* box().scale(<span class="n">1.35</span>, <span class="n">1.0</span>, easeInOutCubic); <span class="c">// 缩放</span>
+
+  <span class="k">const</span> label = createRef&lt;Txt&gt;();
+  view.add(&lt;Txt ref={label} text={<span class="s">'translate → rotate → scale'</span>} y={<span class="n">280</span>} opacity={<span class="n">0</span>} /&gt;);
+
+  <span class="k">yield</span>* all(
+    box().stroke(<span class="s">'#bc8cff'</span>, <span class="n">0.9</span>),
+    label().opacity(<span class="n">1</span>, <span class="n">0.9</span>),
+  );
+});`
+  },
+  remotion: {
+    lang: 'TSX', note: 'Remotion 的核心约束：画面必须是「帧号的纯函数」。同一个 frame，永远得到同一张图。',
+    html: `<span class="k">import</span> {AbsoluteFill, useCurrentFrame, useVideoConfig, interpolate, Easing} <span class="k">from</span> <span class="s">'remotion'</span>;
+
+<span class="k">export const</span> Scene = () =&gt; {
+  <span class="k">const</span> frame = useCurrentFrame();
+  <span class="k">const</span> {fps} = useVideoConfig();
+  <span class="k">const</span> t = frame / fps;                       <span class="c">// 秒</span>
+
+  <span class="k">const</span> seg = (a: <span class="k">number</span>, b: <span class="k">number</span>) =&gt;
+    interpolate(t, [a, b], [<span class="n">0</span>, <span class="n">1</span>], {
+      extrapolateLeft: <span class="s">'clamp'</span>, extrapolateRight: <span class="s">'clamp'</span>,
+      easing: Easing.inOut(Easing.cubic),
+    });
+
+  <span class="k">const</span> move = seg(<span class="n">0.2</span>, <span class="n">1.7</span>);   <span class="c">// 平移</span>
+  <span class="k">const</span> spin = seg(<span class="n">1.7</span>, <span class="n">2.7</span>);   <span class="c">// 旋转</span>
+  <span class="k">const</span> grow = seg(<span class="n">2.7</span>, <span class="n">3.7</span>);   <span class="c">// 缩放</span>
+  <span class="k">const</span> pop  = seg(<span class="n">3.7</span>, <span class="n">4.6</span>);   <span class="c">// 变色 + 出字</span>
+
+  <span class="k">const</span> hue = <span class="n">212</span> + pop * <span class="n">60</span>;
+
+  <span class="k">return</span> (
+    &lt;AbsoluteFill style={{background: <span class="s">'#0b0d12'</span>, display: <span class="s">'grid'</span>, placeItems: <span class="s">'center'</span>}}&gt;
+      &lt;div style={{
+        width: <span class="n">260</span>, height: <span class="n">170</span>, borderRadius: <span class="n">20</span>,
+        border: <span class="s">\`3px solid hsl(\${hue} 85% 62%)\`</span>,
+        background: <span class="s">\`hsl(\${hue} 85% 22% / .35)\`</span>,
+        transform: <span class="s">\`translateX(\${-380 + move * 380}px) rotate(\${spin * 45}deg) scale(\${1 + grow * 0.35})\`</span>,
+      }} /&gt;
+      &lt;div style={{position: <span class="s">'absolute'</span>, bottom: <span class="n">64</span>, opacity: pop}}&gt;
+        translate → rotate → scale
+      &lt;/div&gt;
+    &lt;/AbsoluteFill&gt;
+  );
+};`
+  },
+  revideo: {
+    lang: 'TypeScript', note: 'Revideo 是 Motion Canvas 的分支，场景写法几乎一样，区别在于它是为「服务端调用」设计的。',
+    html: `<span class="c">// 1) 场景文件：和 Motion Canvas 同源的生成器写法</span>
+<span class="k">import</span> {makeScene2D, Rect} <span class="k">from</span> <span class="s">'@revideo/2d'</span>;
+<span class="k">import</span> {createRef, easeInOutCubic} <span class="k">from</span> <span class="s">'@revideo/core'</span>;
+
+<span class="k">export default</span> makeScene2D(<span class="k">function</span>* (view) {
+  <span class="k">const</span> box = createRef&lt;Rect&gt;();
+  view.add(&lt;Rect ref={box} width={<span class="n">260</span>} height={<span class="n">170</span>}
+                radius={<span class="n">20</span>} fill={<span class="s">'#58a6ff'</span>} x={<span class="n">-380</span>} /&gt;);
+
+  <span class="k">yield</span>* box().position.x(<span class="n">0</span>, <span class="n">1.5</span>, easeInOutCubic);
+  <span class="k">yield</span>* box().rotation(<span class="n">45</span>, <span class="n">1.0</span>, easeInOutCubic);
+  <span class="k">yield</span>* box().scale(<span class="n">1.35</span>, <span class="n">1.0</span>, easeInOutCubic);
+});
+
+<span class="c">// 2) 渲染：Node 里一个函数调用，天然适合包成 HTTP 接口</span>
+<span class="k">import</span> {renderVideo} <span class="k">from</span> <span class="s">'@revideo/renderer'</span>;
+
+<span class="k">await</span> renderVideo({
+  projectFile: <span class="s">'./src/project.ts'</span>,
+  settings: {outFile: <span class="s">'out.mp4'</span>, fps: <span class="n">30</span>},
+});`
+  },
+  hf: {
+    lang: 'HTML', note: 'HyperFrames 的源文件就是 HTML：用 data-start / data-duration 声明时间，内部用 GSAP / CSS 驱动动画。下面是骨架。',
+    html: `<span class="c">&lt;!-- npx hyperframes init my-video --example blank --&gt;</span>
+<span class="c">&lt;!-- 视频的源文件就是一个 HTML 组合 --&gt;</span>
+&lt;div id=<span class="s">"root"</span>
+     data-composition-id=<span class="s">"main"</span>
+     data-start=<span class="s">"0"</span> data-duration=<span class="s">"5"</span>
+     data-width=<span class="s">"1280"</span> data-height=<span class="s">"720"</span>&gt;
+
+  &lt;div <span class="k">class</span>=<span class="s">"box"</span> data-start=<span class="s">"0.2"</span> data-duration=<span class="s">"4.4"</span>&gt;&lt;/div&gt;
+  &lt;p <span class="k">class</span>=<span class="s">"label"</span> data-start=<span class="s">"3.7"</span> data-duration=<span class="s">"1.3"</span>&gt;
+    translate → rotate → scale
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+  <span class="c">/* 样式就是普通 CSS：没有新 DSL */</span>
+  .box { width:<span class="n">260px</span>; height:<span class="n">170px</span>; border-radius:<span class="n">20px</span>;
+         border:<span class="n">3px</span> solid #58a6ff; background:#58a6ff22; }
+&lt;/style&gt;
+
+&lt;script src=<span class="s">"https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"</span>&gt;&lt;/script&gt;
+&lt;script&gt;
+  <span class="c">// 动画交给 GSAP，引擎按帧 seek 这个时间轴</span>
+  gsap.timeline()
+    .to(<span class="s">'.box'</span>, {x:<span class="n">380</span>, duration:<span class="n">1.5</span>, ease:<span class="s">'power2.inOut'</span>}, <span class="n">0.2</span>)
+    .to(<span class="s">'.box'</span>, {rotation:<span class="n">45</span>, duration:<span class="n">1.0</span>}, <span class="n">1.7</span>)
+    .to(<span class="s">'.box'</span>, {scale:<span class="n">1.35</span>, duration:<span class="n">1.0</span>}, <span class="n">2.7</span>)
+    .to(<span class="s">'.box'</span>, {borderColor:<span class="s">'#bc8cff'</span>, duration:<span class="n">0.9</span>}, <span class="n">3.7</span>);
+&lt;/script&gt;`
+  },
+  vawe: {
+    lang: 'HTML', note: 'vawe 不要求你学新东西：普通 CSS 动画写页面，渲染器把虚拟时钟停在你指定的帧上截图。',
+    html: `<span class="c">&lt;!-- 这就是一整个网页，没有构建步骤 --&gt;</span>
+&lt;style&gt;
+  body { margin:<span class="n">0</span>; background:#0b0d12; }
+  .box {
+    width:<span class="n">260px</span>; height:<span class="n">170px</span>; border-radius:<span class="n">20px</span>;
+    border:<span class="n">3px</span> solid #58a6ff; background:#58a6ff22;
+    <span class="c">/* 三段动画串在同一条时间轴上 */</span>
+    animation:
+      move  <span class="n">1.5s</span> <span class="n">0.2s</span> cubic-bezier(.65,<span class="n">0</span>,.35,<span class="n">1</span>) both,
+      spin  <span class="n">1.0s</span> <span class="n">1.7s</span> cubic-bezier(.65,<span class="n">0</span>,.35,<span class="n">1</span>) both,
+      grow  <span class="n">1.0s</span> <span class="n">2.7s</span> cubic-bezier(.65,<span class="n">0</span>,.35,<span class="n">1</span>) both;
+  }
+  @keyframes move { from { transform: translateX(<span class="n">-380px</span>) } }
+  @keyframes spin { from { rotate: <span class="n">0deg</span> } to { rotate: <span class="n">45deg</span> } }
+  @keyframes grow { from { scale: <span class="n">1</span> } to { scale: <span class="n">1.35</span> } }
+&lt;/style&gt;
+
+&lt;div <span class="k">class</span>=<span class="s">"box"</span>&gt;&lt;/div&gt;
+&lt;div <span class="k">class</span>=<span class="s">"label"</span>&gt;translate → rotate → scale&lt;/div&gt;
+
+<span class="c"># 渲染：虚拟时钟接管 Date / 定时器 / rAF，逐帧 seek</span>
+<span class="c"># npx vawe render page.html out.mp4</span>`
+  },
+  raw: {
+    lang: 'JavaScript', note: '本项目正片用的就是这套。核心只有一句：把动画写成 f(t)，然后用 t 去驱动每一帧。',
+    html: `<span class="c">// 页面里：动画必须是时间的纯函数</span>
+window.seek = (ms) =&gt; {
+  <span class="k">const</span> t = ms / <span class="n">1000</span>;
+  <span class="k">const</span> move = seg(t, <span class="n">0.2</span>, <span class="n">1.7</span>);
+  <span class="k">const</span> spin = seg(t, <span class="n">1.7</span>, <span class="n">2.7</span>);
+  <span class="k">const</span> grow = seg(t, <span class="n">2.7</span>, <span class="n">3.7</span>);
+  <span class="k">const</span> pop  = seg(t, <span class="n">3.7</span>, <span class="n">4.6</span>);
+
+  <span class="k">const</span> hue = <span class="n">212</span> + pop * <span class="n">60</span>;
+  box.style.transform =
+    <span class="s">\`translateX(\${-380 + move * 380}px) rotate(\${spin * 45}deg) scale(\${1 + grow * 0.35})\`</span>;
+  box.style.borderColor = <span class="s">\`hsl(\${hue} 85% 62%)\`</span>;
+  label.style.opacity = pop;
+};
+
+<span class="c">// Node 里：逐帧 seek → 截图 → 管道灌给 ffmpeg</span>
+<span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; frames; i++) {
+  <span class="k">await</span> page.evaluate(t =&gt; window.seek(t), i * <span class="n">1000</span> / fps);
+  <span class="k">const</span> buf = <span class="k">await</span> page.screenshot({type: <span class="s">'jpeg'</span>, quality: <span class="n">95</span>});
+  ffmpeg.stdin.write(buf);
+}`
+  },
+};
+
+const box = document.getElementById('codebox');
+const foot = document.getElementById('codefoot');
+function show(k){
+  box.innerHTML = CODE[k].html;
+  foot.textContent = CODE[k].lang + ' · ' + CODE[k].note;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.k === k));
+}
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => show(t.dataset.k));
+show('manim');
+
+document.getElementById('sync').onclick = () => {
+  ['v-manim','v-remotion','v-html'].forEach(id => {
+    const v = document.getElementById(id);
+    v.currentTime = 0; v.play();
+  });
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "code-animation-studio",
+  "private": true,
+  "type": "module",
+  "description": "把口播稿 + 画面提示编译成科普/教学动画的流水线",
+  "dependencies": { "puppeteer-core": "^25.0.0" }
+}
