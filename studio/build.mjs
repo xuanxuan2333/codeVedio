@@ -116,7 +116,7 @@ const frames = Math.round((totalMs / 1000) * FPS);
 // ---------- 3. 渲染 ----------
 const profile = path.join(proj, '.chrome-profile');
 const browser = await puppeteer.launch({
-  executablePath: CHROME, headless: true, userDataDir: profile, protocolTimeout: 60000,
+  executablePath: CHROME, headless: true, userDataDir: profile, protocolTimeout: 180000,
   args: ['--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--force-color-profile=srgb',
     '--autoplay-policy=no-user-gesture-required', `--window-size=${W},${H}`],
 });
@@ -154,7 +154,17 @@ const write = buf => new Promise((res, rej) => ff.stdin.write(buf, e => (e ? rej
 const t0 = Date.now();
 for (let i = 0; i < frames; i++) {
   await page.evaluate(t => window.seek(t), (i * 1000) / FPS);
-  await write(await page.screenshot({ type: 'jpeg', quality: 95, captureBeyondViewport: false }));
+  let shot = null;
+  for (let attempt = 0; attempt < 3 && !shot; attempt++) {
+    try {
+      shot = await page.screenshot({ type: 'jpeg', quality: 95, captureBeyondViewport: false });
+    } catch (e) {
+      console.error(`\n帧 ${i} 截图失败(${attempt + 1}/3): ${e.message}`);
+      await new Promise(r => setTimeout(r, 1500));
+    }
+  }
+  if (!shot) { console.error('放弃：连续截图失败'); process.exit(1); }
+  await write(shot);
   if (i % 60 === 0) {
     const el = (Date.now() - t0) / 1000;
     process.stdout.write(`\r帧 ${i}/${frames}  ${(i / el).toFixed(1)} fps  `);

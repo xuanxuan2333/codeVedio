@@ -505,7 +505,7 @@ const BUILDERS = {
 
 /* ---------------- 字幕切分 ---------------- */
 function captionChunks(text) {
-  const clean = String(text || '').replace(/｜｜/g, '，').replace(/｜/g, '');
+  const clean = String(text || '').replace(/｜/g, '，').replace(/，+/g, '，').replace(/^，/, '');
   const parts = clean.split(/(?<=[。！？!?；;])/).filter(Boolean);
   const out = [];
   for (const p of parts) {
