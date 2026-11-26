@@ -1,3 +1,21 @@
+
+---
+
+## 给另一台机器：三步跑起来
+
+```bash
+git clone https://github.com/xuanxuan2333/codeVedio.git && cd codeVedio
+bash studio/skill/install.sh          # 把技能装进本机 DSH
+cd studio && npm i && ../.venv/bin/pip install -r requirements.txt 2>/dev/null || true
+```
+
+装完之后，在新会话里说一句「**根据 readme 做一个科普视频，以下是文案：…**」，
+技能会自动加载，按里面的七步流程产出成片。
+
+> 技能本体在 `studio/skill/code-animation-video/`（SKILL.md + 9 个 references），
+> 也可以直接把整个目录拷到 `~/.dsh/skills/` 下。
+> 音色、素材、断点、竖屏提纲这些细节，全部在 references 里，不用翻这份长文。
+
 # 科普动画生产线 · README
 
 > 把「一段口播 + 括号里的画面提示」编译成一条可发布的科普 / 教学 / 观点视频。

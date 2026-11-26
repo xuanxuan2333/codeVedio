@@ -20,6 +20,8 @@ description: 把一段中文口播文案做成科普 / 教学 / 观点类动画�
    括号写在句尾，但它描述的画面要在**这句开口的同时**就在动，不是说完再上图。
 3. **先审画面，再渲全片。** `--stills` 没过，不许渲全片。
 4. **先当导演，再当排版。** 母题、色光、运动语言定下来之前，不写分镜——否则必是 PPT。
+5. **语速要有快慢。** 全片同一个速度 = 没有重点。按句意给每镜标 `rate`，见 `08-语音表演.md`。
+6. **视觉要有规矩。** 三个颜色、一个图片来源、层级分明；渐变从主题前景色起，不许写死白色。见 `09-视觉规范.md`。
 
 ---
 
@@ -30,7 +32,9 @@ ls studio/build.mjs
 ```
 
 - 有 → 当前目录就是工程根，`cd studio` 后继续。
-- 没有 → 按顺序找 `~/Documents/AI/vedio/codeVedio/studio/build.mjs`；再找不到就问用户。
+- 没有 → 按顺序找 `~/Documents/AI/vedio/codeVedio/studio/build.mjs`。
+- 都没有 → 克隆仓库：`git clone https://github.com/xuanxuan2333/codeVedio.git && cd codeVedio`
+  （这是这套流水线的官方仓库，studio/ 和 skill 都在里面）
 
 依赖：Node 20+、`.venv`（ffmpeg + edge-tts）、本机 Chrome。缺了自己装，别停。
 
@@ -49,7 +53,7 @@ ls studio/build.mjs
 | 0 | **校对** | 只改语病/错别字/事实错误；逐条列出 | — |
 | 1 | **导演** | `design.md` + `shots.md`：一句话主张、母题、色/光、运动语言、逐镜设计 | ⏸ 给用户看方案 |
 | 2 | **素材**（可并行 N 路） | `assets/*` + 每张都肉眼确认 | — |
-| 3 | **分镜**（可并行 N 路） | `chunks/N-段名.json` | — |
+| 3 | **分镜**（可并行 N 路） | `chunks/N-段名.json`；每镜按句意标 `rate` / `hold` | — |
 | 4 | **合并 + 对轴** | `node merge.mjs` → `--timeline` | — |
 | 5 | **审画面** | `--stills` 看 5 个以上时刻 | ⏸ 自己过三问 |
 | 6 | **渲染** | `out/<slug>.mp4` | — |
@@ -159,3 +163,5 @@ node build.mjs projects/<名字>                   # 最后全片
 | `references/05-出片与排错.md` | 渲染失败、出片慢、素材打架 |
 | `references/06-质检.md` | 交付前 |
 | `references/07-并行工作流.md` | 20 镜以上、要拆多 agent 并行时 |
+| `references/08-语音表演.md` | **配音平、没重点**时：按句意给语速和停顿 |
+| `references/09-视觉规范.md` | **配色 / 图片 / 层级**：开工前扫一眼，交付前对检查表 |

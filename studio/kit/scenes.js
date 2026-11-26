@@ -525,6 +525,56 @@ const SB = window.STORYBOARD;
 const built = [];
 let sceneEls = [];
 
+function buildOutline() {
+  const host = document.getElementById('outline');
+  const chs = (SB.chapters || []);
+  if (!chs.length) { host.style.display = 'none'; return null; }
+  const sceneIndex = {};
+  SB.scenes.forEach((sc, i) => { sceneIndex[sc.id] = i; });
+
+  const rows = chs.map((ch, ci) => {
+    const box = h('div', 'ol-chapter');
+    const head = h('div', 'ol-head');
+    head.innerHTML = `<span class="ol-num">${String(ci + 1).padStart(2, '0')}</span><span class="ol-title">${ch.title}</span>`;
+    box.appendChild(head);
+    const items = (ch.items || []).map(it => {
+      const row = h('div', 'ol-item');
+      row.innerHTML = `<i></i><span>${it.label}</span>`;
+      box.appendChild(row);
+      return { row, scenes: it.scenes || [] };
+    });
+    const own = ch.scenes || [];
+    return { box, head, items, scenes: own, all: [...own, ...items.flatMap(i => i.scenes)] };
+  });
+  rows.forEach(r => host.appendChild(r.box));
+  return { rows, sceneIndex };
+}
+
+let OUTLINE = null;
+
+function renderOutline(sceneId) {
+  if (!OUTLINE) return;
+  const idx = OUTLINE.sceneIndex[sceneId];
+  let curCh = -1;
+  OUTLINE.rows.forEach((r, ci) => {
+    if (!r.all.length) return;
+    const first = OUTLINE.sceneIndex[r.all[0]];
+    const last = OUTLINE.sceneIndex[r.all[r.all.length - 1]];
+    if (idx >= first && idx <= last) curCh = ci;
+  });
+  OUTLINE.rows.forEach((r, ci) => {
+    const state = ci < curCh ? 'done' : ci === curCh ? 'cur' : 'next';
+    r.box.className = 'ol-chapter ' + state;
+    if (ci !== curCh) return;
+    r.items.forEach(it => {
+      const first = OUTLINE.sceneIndex[it.scenes[0]];
+      const last = OUTLINE.sceneIndex[it.scenes[it.scenes.length - 1]];
+      it.row.classList.toggle('on', idx >= first && idx <= last);
+      it.row.classList.toggle('past', idx > last);
+    });
+  });
+}
+
 function init() {
   const V = SB.height > SB.width;
   document.body.classList.toggle('v', V);
@@ -533,11 +583,22 @@ function init() {
     el.style.width = SB.width + 'px';
     el.style.height = SB.height + 'px';
   }
+  OUTLINE = buildOutline();
   const stage = document.getElementById('stage');
   SB.scenes.forEach((s, i) => {
     const b = BUILDERS[s.type];
     if (!b) { console.warn('未知场景类型:', s.type); return; }
     const inst = b(s);
+    const bgSrc = (s.params && s.params.bg);
+    if (bgSrc) {
+      const base = h('div', 'scene-bg-base');
+      const bg = h('div', 'scene-bg');
+      bg.style.backgroundImage = `url('${bgSrc}')`;
+      const veil = h('div', 'scene-bg-veil');
+      inst.el.insertBefore(veil, inst.el.firstChild);
+      inst.el.insertBefore(bg, inst.el.firstChild);
+      inst.el.insertBefore(base, inst.el.firstChild);
+    }
     inst.el.dataset.i = i;
     stage.appendChild(inst.el);
     built.push(inst);
@@ -565,6 +626,14 @@ window.seek = async function (ms) {
   if (cur >= 0) {
     const s = SB.scenes[cur];
     built[cur].render(t - s.start);
+  }
+
+  // 提纲导航
+  if (cur >= 0) {
+    const sc = SB.scenes[cur];
+    renderOutline(sc.id);
+    document.getElementById('outline').style.opacity =
+      sc.params && sc.params.noOutline ? 0 : Math.min(1, (t - sc.start) / 0.3);
   }
 
   // 言外之意

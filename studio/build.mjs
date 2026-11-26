@@ -60,10 +60,11 @@ if (!flag('stills')) {
     // 每句语速轻微抖动（±3%），打破机械的匀速感
     const JIT = [-3, 0, 2, -2, 3, 0];
     const baseRate = parseFloat(String(meta.rate || '+8%')) || 8;
-    const job = need.map((s, i) => ({
-      id: s.id, text: s.say,
-      rate: `${baseRate + JIT[i % JIT.length] >= 0 ? '+' : ''}${baseRate + JIT[i % JIT.length]}%`,
-    }));
+    const job = need.map((s, i) => {
+      // 单镜可以自带语速（结论慢、举例快），没有就用基准 + 抖动
+      const r = s.rate != null ? Number(s.rate) : baseRate + JIT[i % JIT.length];
+      return { id: s.id, text: s.say, rate: `${r >= 0 ? '+' : ''}${r}%` };
+    });
     const jobPath = path.join(proj, '_tts.job.json');
     fs.writeFileSync(jobPath, JSON.stringify(job, null, 1));
     fs.mkdirSync(path.join(proj, 'audio'), { recursive: true });
@@ -97,8 +98,22 @@ if (!flag('stills')) {
   });
   const total = Math.round((t + 0.1) * 1000) / 1000;
   const payload = { width: W, height: H, fps: FPS, duration: total, scenes,
-                    theme: meta.theme || 'dark' };
+                    theme: meta.theme || 'dark', chapters: meta.chapters || [] };
   fs.writeFileSync(path.join(proj, 'storyboard.js'), 'window.STORYBOARD = ' + JSON.stringify(payload) + ';\n');
+  // 时长体检：按字数估秒数，异常直接告警（防截断/防拖沓）
+  const odd = scenes.filter(sc => {
+    const chars = String(sc.say || '').replace(/[^\u4e00-\u9fffA-Za-z0-9]/g, '').length;
+    if (!chars) return false;
+    const r = sc.dur / chars;
+    return r < 0.13 || r > 0.36;
+  });
+  if (odd.length) {
+    console.log('⚠️ 时长异常（可能被截断或拖沓）:');
+    for (const sc of odd) {
+      const chars = String(sc.say).replace(/[^\u4e00-\u9fffA-Za-z0-9]/g, '').length;
+      console.log(`   ${sc.id}  ${sc.dur.toFixed(2)}s / ${chars} 字 = ${(sc.dur / chars).toFixed(2)}  → ${String(sc.say).slice(0, 18)}`);
+    }
+  }
   console.log(`时间轴 ${total.toFixed(2)}s / ${scenes.length} 镜 / ${Math.round(total * FPS)} 帧`);
   if (flag('timeline')) process.exit(0);
 }
